@@ -82,15 +82,15 @@ tasks:
     cmds:
       - |
         docker buildx build \
-          --build-arg VERSION={{.VERSION}} \
-          --build-arg BUILD_DATE={{.DATE}} \
-          --build-arg VCS_REF={{.COMMIT}} \
-          -t {{.IMAGE_NAME}} .
+          --build-arg VERSION={% raw %}{{.VERSION}}{% endraw %} \
+          --build-arg BUILD_DATE={% raw %}{{.DATE}}{% endraw %} \
+          --build-arg VCS_REF={% raw %}{{.COMMIT}}{% endraw %} \
+          -t {% raw %}{{.IMAGE_NAME}}{% endraw %} .
 
   docker-run:
     desc: Run Docker image
     cmds:
-      - docker run -it --rm {{.IMAGE_NAME}} {{.CLI_ARGS}}
+      - docker run -it --rm {% raw %}{{.IMAGE_NAME}} {{.CLI_ARGS}}{% endraw %}
 
   {%- endif %}
 
