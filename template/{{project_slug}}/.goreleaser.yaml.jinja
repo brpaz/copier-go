@@ -20,9 +20,9 @@ builds:
       - darwin
     ldflags:
       - -w -s
-      - -X main.Version={{ .Version }}
-      - -X main.BuildDate={{ .Date }}
-      - -X main.Commit={{ .Commit }}
+      - -X {{go_module}}/cmd/main.Version={% raw %}{{ .Version }}{% endraw %}
+      - -X {{go_module}}/cmd/main.BuildDate={% raw %}{{ .Date }}{% endraw %}
+      - -X {{go_module}}/cmd/main.Commit={% raw %}{{ .Commit }}{% endraw %}
     main: cmd/main.go
 
 archives:

@@ -49,7 +49,7 @@ RUN --mount=type=cache,target=/go/pkg/mod \
   go build \
   -a \
   -trimpath \
-  -ldflags="-w -s -X main.Version=${VERSION} -X main.BuildDate=${BUILD_DATE} -X main.Commit=${VCS_REF}" \
+  -ldflags="-w -s -X {{go_module}}/cmd/main.Version=${VERSION} -X {{go_module}}/cmd/main.BuildDate=${BUILD_DATE} -X {{go_module}}/cmd/main.Commit=${VCS_REF}" \
   -o /build/app ./cmd/main.go
 
 # ==============================
@@ -59,21 +59,22 @@ FROM golang:${GO_VERSION}-alpine${ALPINE_VERSION} AS development
 
 ARG AIR_VERSION=1.63.4
 ARG DELVE_VERSION=1.25.2
+ARG GID=1000
+ARG UID=1000
+
+WORKDIR /app
 
 RUN apk --no-cache add git curl bash
 
 RUN go install github.com/air-verse/air@v${AIR_VERSION} \
   go install github.com/go-delve/delve/cmd/dlv@${DELVE_VERSION}
 
-WORKDIR /app
+RUN addgroup -g ${GID} -S appgroup && \
+  adduser -u ${UID} -S appuser -G appgroup
 
 COPY . .
 
-# Expose debug port
-EXPOSE 2345
-
-# Expose app port
-EXPOSE 8080
+USER appuser
 
 # Run air for hot-reload with delve debugger
 CMD ["air", "-c", ".air.toml"]
@@ -86,16 +87,22 @@ FROM alpine:${ALPINE_VERSION} AS production
 ARG BUILD_DATE
 ARG VCS_REF
 ARG VERSION=latest
+ARG GID=1000
+ARG UID=1000
 
-# Import certificates and timezone data from builder
+WORKDIR /app
+
+RUN addgroup -g ${GID} -S appgroup && \
+  adduser -u ${UID} -S appuser -G appgroup
+
 RUN apk --no-cache add ca-certificates curl
 
-# Copy the binary
 COPY --from=builder /build/app /app
 
-# Copy any additional required files (like config files, static assets)
-# COPY --from=builder /app/config /config
-# COPY --from=builder /app/static /static
+RUN chown appuser:appgroup /app && \
+  chmod +x /app
+
+USER appuser
 
 ENV PORT=8080
 
@@ -105,8 +112,7 @@ LABEL org.opencontainers.image.title="{{ project_project_name }}" \
   org.opencontainers.image.version="${VERSION}" \
   org.opencontainers.image.created="${BUILD_DATE}" \
   org.opencontainers.image.revision="${VCS_REF}" \
-  org.opencontainers.image.vendor="" \
-  org.opencontainers.image.description="{{ project_description }}"
+  org.opencontainers.image.description="{{ project_description }}" \
+  org.opencontainers.image.source="{{ github_url }}"
 
-# Run the binary
 ENTRYPOINT ["/app"]

@@ -151,8 +151,7 @@ jobs:
           build-args: |
             BUILD_DATE={% raw %}${{ env.BUILD_DATE }}{% endraw %}
             VERSION={% raw %}${{ env.VERSION }}{% endraw %}
-            REVISION={% raw %}${{ github.sha }}{% endraw %}
-          target: runtime
+            VCS_REF={% raw %}${{ github.sha }}{% endraw %}
           tags: {% raw %}${{ env.TEST_IMAGE_TAG }}{% endraw %}
           labels: {% raw %}${{ steps.meta.outputs.labels }}{% endraw %}
           push: false
@@ -174,8 +173,7 @@ jobs:
           build-args: |
             BUILD_DATE={% raw %}${{ env.BUILD_DATE }}{% endraw %}
             VERSION={% raw %}${{ env.VERSION }}{% endraw %}
-            REVISION={% raw %}${{ github.sha }}{% endraw %}
-          target: runtime
+            VCS_REF={% raw %}${{ github.sha }}{% endraw %}
           tags: {% raw %}${{ steps.meta.outputs.tags }}{% endraw %}
           labels: {% raw %}${{ steps.meta.outputs.labels }}{% endraw %}
           platforms: linux/amd64,linux/arm64
@@ -187,6 +185,8 @@ jobs:
     name: Build Binaries
     runs-on: ubuntu-latest
     needs: [lint, test]
+    permissions:
+      contents: write
     steps:
       - name: Checkout
         uses: actions/checkout@v6
@@ -212,5 +212,13 @@ jobs:
         args: release --clean
       env:
         GITHUB_TOKEN: {% raw %}${{ secrets.GITHUB_TOKEN }}{% endraw %}
+
+    - name: Upload Artifacts
+      if: github.ref == 'refs/heads/main'
+      uses: actions/upload-artifact@v5
+      with:
+        name: build-artifacts
+        path: dist/*
+        retention-days: 7
 
 
