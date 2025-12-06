@@ -23,6 +23,7 @@ builds:
       - -X main.Version={{ .Version }}
       - -X main.BuildDate={{ .Date }}
       - -X main.Commit={{ .Commit }}
+    main: cmd/main.go
 
 archives:
   - formats: [tar.gz]

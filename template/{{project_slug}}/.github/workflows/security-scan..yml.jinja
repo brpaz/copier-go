@@ -51,7 +51,6 @@ jobs:
           fi
 
   {% if project_type == "cli" or project_type == "api" %}
-  {% raw %}
   trivy-scan-docker:
     name: Trivy - Docker Image Scan
     runs-on: ubuntu-latest
@@ -67,7 +66,7 @@ jobs:
         with:
           context: .
           file: Dockerfile
-          tags: test-image:${{ github.sha }}
+          tags: {% raw %}test-image:${{ github.sha }}{% endraw %}
           load: true
           cache-from: type=gha
           cache-to: type=gha,mode=max
@@ -76,12 +75,12 @@ jobs:
         uses: aquasecurity/trivy-action@0.33.1
         with:
           scan-type: "image"
-          image-ref: "test-image:${{ github.sha }}"
+          image-ref: {% raw %}"test-image:${{ github.sha }}"{% endraw %}
           output: "trivy-image-results.txt"
           severity: "CRITICAL,HIGH"
 
       - name: Publish Trivy Output to Summary
-        if: ${{ !cancelled() }}
+        if: {% raw %}${{ !cancelled() }}{% endraw %}
         run: |
           if [[ -s trivy-image-results.txt ]]; then
             {
@@ -94,5 +93,4 @@ jobs:
               echo "</details>"
             } >> $GITHUB_STEP_SUMMARY
           fi
-      {% endraw %}
-    {% endif %}
+  {% endif %}

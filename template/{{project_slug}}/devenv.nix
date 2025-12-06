@@ -24,6 +24,8 @@
     commitlint-rs
     python313Packages.mkdocs
     python313Packages.mkdocs-material
+    python313Packages.mkdocs-mermaid2-plugin
+    shellcheck
   ];
 
   enterShell = ''

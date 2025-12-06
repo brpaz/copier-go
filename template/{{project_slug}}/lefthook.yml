@@ -3,17 +3,17 @@
 commit-msg:
   commands:
     commitlint:
-      run: commitlint --edit $1
+      run: commitlint
 
 pre-commit:
   parallel: true
   commands:
     lint:
       glob: "*.go"
-      run: golangci-lint run --fix {stage_files}
+      run: golangci-lint run --fix {staged_files}
       stage_fixed: true
     docs:
-      run: task docgen
+      run: task gomarkdoc
       glob: "*.go"
       stage_fixed: true
     tests:

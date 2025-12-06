@@ -4,6 +4,20 @@ version: "3"
 
 vars:
   REPORTS_DIR: "reports"
+  VERSION:
+    sh: git describe --tags --always --dirty || echo "n/a"
+  DATE:
+    sh: date -u +%Y-%m-%dT%H:%M:%SZ
+  COMMIT:
+    sh: git rev-parse --short HEAD || echo "n/a"
+
+  {% if project_type != 'library' -%}
+  IMAGE_NAME: {{ project_slug }}:local-dev
+  {%- endif %}
+
+dotenv:
+  - .env
+  - .env.local
 
 tasks:
   default:
@@ -14,7 +28,7 @@ tasks:
     desc: Ensure reports directory exists
     internal: true
     cmds:
-      - mkdir -p {% raw %}${{ .REPORTS_DIR }}{% endraw %}
+      - mkdir -p {% raw %}{{ .REPORTS_DIR }}{% endraw %}
 
   lint:
     desc: Run GolangCI-Lint
@@ -34,8 +48,8 @@ tasks:
       - |
         gotestsum \
           --format testname \
-          --jsonfile {% raw %}${{ .REPORTS_DIR }}{% endraw %}/test-result.json \
-          --  -coverprofile={% raw %}${{ .REPORTS_DIR }}{% endraw %}/coverage.out -covermode=atomic ./...
+          --jsonfile {% raw %}{{ .REPORTS_DIR }}{% endraw %}/test-result.json \
+          --  -coverprofile={% raw %}{{ .REPORTS_DIR }}{% endraw %}/coverage.out -covermode=atomic ./...
 
   gomod:
     desc: Download Go modules
@@ -45,7 +59,7 @@ tasks:
   gomarkdoc:
     desc: Generate documentation using gomarkdoc
     cmds:
-      - gomarkdoc --output '{{`{{.Dir}}`}}/README.md' ./...
+      - gomarkdoc --output {% raw %}'{{`{{.Dir}}`}}/GOMARKDOC.md'{% endraw %} ./...
 
   docs-build:
     desc: Build documentation site
@@ -55,13 +69,29 @@ tasks:
   docs-serve:
     desc: Serve documentation locally
     cmds:
-      - mkdocs serve --dev-addr=127.0.0.1:{% raw %}${{ .DOCS_PORT:-8000 }}{% endraw %}
+      - mkdocs serve --dev-addr=127.0.0.1:{% raw %}{{ .DOCS_PORT | default "8080" }}{% endraw %}
 
   {% if project_type != 'library' -%}
   snapshot:
     desc: Create a snapshot build
     cmds:
       - goreleaser release --snapshot --skip-publish --rm-dist
+
+  docker-build:
+    desc: Build Docker image
+    cmds:
+      - |
+        docker buildx build \
+          --build-arg VERSION={{.VERSION}} \
+          --build-arg BUILD_DATE={{.DATE}} \
+          --build-arg VCS_REF={{.COMMIT}} \
+          -t {{.IMAGE_NAME}} .
+
+  docker-run:
+    desc: Run Docker image
+    cmds:
+      - docker run -it --rm {{.IMAGE_NAME}} {{.CLI_ARGS}}
+
   {%- endif %}
 
   {% if project_type == 'api' -%}

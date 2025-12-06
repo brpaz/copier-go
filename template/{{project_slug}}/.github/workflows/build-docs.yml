@@ -9,9 +9,9 @@ on:
     paths:
       - "docs/**"
   workflow_dispatch:
-env:
-  MKDOCS_VERSION: "1.6.1"
-  MKDOCS_MATERIAL_VERSION: "9.7.0"
+
+permissions:
+  contents: write
 jobs:
   build:
     name: Build and Deploy Documentation
@@ -25,7 +25,7 @@ jobs:
           python-version: "3.x"
 
       - name: Install dependencies
-        run: pip3 install mkdocs==${{ env.MKDOCS_VERSION }} mkdocs-material==${{ env.MKDOCS_MATERIAL_VERSION }}
+        run: pip3 install -r docs/requirements.txt
 
       - name: Build docs
         run: mkdocs build

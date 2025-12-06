@@ -82,8 +82,7 @@ jobs:
           files: ./reports/coverage.out
           token: {% raw %}${{ secrets.CODECOV_TOKEN }}{% endraw %}
 
-
- {% if project_type != 'library' -%}
+ {%- if project_type != 'library' -%}
   build-docker:
     name: Build Docker Image
     runs-on: ubuntu-latest
@@ -91,6 +90,9 @@ jobs:
     permissions:
       contents: read
       packages: write
+    env:
+      IMAGE_REGISTRY: ghcr.io
+      IMAGE_NAME: {% raw %}${{ github.repository }}{% endraw %}
     steps:
       - name: Checkout
         uses: actions/checkout@v6
@@ -133,10 +135,12 @@ jobs:
         with:
           images: {% raw %}${{ env.IMAGE_REGISTRY }}/${{ env.IMAGE_NAME }}{% endraw %}
           tags: |
+            {% raw %}
             type=raw,value=latest,enable={{is_default_branch}}
             type=ref,event=branch
             type=semver,pattern=v{{version}}
             type=sha,format=short
+            {% endraw %}
 
       - name: Build image
         uses: docker/build-push-action@v6
@@ -154,10 +158,12 @@ jobs:
           push: false
           load: true
 
+      {% if project_type == "api" -%}
       - name: Run Image smoke tests
         uses: ./.github/actions/docker-smoke-test
         with:
           image-tag: {% raw %}${{ env.TEST_IMAGE_TAG }}{% endraw %}
+      {%- endif %}
 
       - name: Final Build and Push to Registry
         uses: docker/build-push-action@v6
@@ -177,35 +183,34 @@ jobs:
           sbom: true
           provenance: mode=max
 
-    build-binary:
-      name: Build Binaries
-      runs-on: ubuntu-latest
-      needs: [lint, test]
-      steps:
-        - name: Checkout
-          uses: actions/checkout@v6
-          with:
-            fetch-depth: 0
-
-        - uses: actions/setup-go@v5
-          with:
-            go-version-file: "go.mod"
-
-      - name: Run GoReleaser (snapshot)
-        uses: goreleaser/goreleaser-action@v6
-        if: github.event_name != 'release'
+  build-binary:
+    name: Build Binaries
+    runs-on: ubuntu-latest
+    needs: [lint, test]
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
         with:
-          args: release --clean --snapshot
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          fetch-depth: 0
 
-      - name: Run GoReleaser (release)
-        uses: goreleaser/goreleaser-action@v6
-        if: github.event_name == 'release'
+      - uses: actions/setup-go@v5
         with:
-          args: release --clean
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-    {% endif %}
+          go-version-file: "go.mod"
+
+    - name: Run GoReleaser (snapshot)
+      uses: goreleaser/goreleaser-action@v6
+      if: github.event_name != 'release'
+      with:
+        args: release --clean --snapshot
+      env:
+        GITHUB_TOKEN: {% raw %}${{ secrets.GITHUB_TOKEN }}{% endraw %}
+
+    - name: Run GoReleaser (release)
+      uses: goreleaser/goreleaser-action@v6
+      if: github.event_name == 'release'
+      with:
+        args: release --clean
+      env:
+        GITHUB_TOKEN: {% raw %}${{ secrets.GITHUB_TOKEN }}{% endraw %}
 
 
