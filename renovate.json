@@ -16,5 +16,11 @@
             "(^|/)go\\.mod$",
             "(^|/)go\\.mod\\.jinja$"
         ]
+    },
+    "github-actions": {
+        "fileMatch": [
+            "(^|/)\\.github/workflows/[^/]+\\.ya?ml$",
+            "(^|/)\\.github/workflows/[^/]+\\.ya?ml\\.jinja$"
+        ]
     }
 }
