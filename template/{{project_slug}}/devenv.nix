@@ -5,19 +5,31 @@
   inputs,
   ...
 }: {
-  languages.go.enable = true;
+  languages = {
+    go = {
+      enable = true;
+      enableHardeningWorkaround = true;
+      package = pkgs.go;
+    };
+  };
   dotenv.enable = true;
 
   # https://devenv.sh/packages/
   packages = with pkgs; [
     go-task
     gotestsum
+    goreleaser
     gomarkdoc
     lefthook
     commitlint-rs
+    python313Packages.mkdocs
+    python313Packages.mkdocs-material
   ];
 
   enterShell = ''
+    if [ -f .env ]; then
+      cp env.example .env
+    fi
     lefthook install
     go mod tidy
   '';
@@ -30,6 +42,7 @@
 
   # https://devenv.sh/tests/
   enterTest = ''
+    go test ./... -v
   '';
 
   # https://devenv.sh/git-hooks/

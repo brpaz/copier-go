@@ -1,0 +1,82 @@
+# https://taskfile.dev
+
+version: "3"
+
+vars:
+  REPORTS_DIR: "reports"
+
+tasks:
+  default:
+    cmds:
+      - task -l
+
+  ensure_reports_dir:
+    desc: Ensure reports directory exists
+    internal: true
+    cmds:
+      - mkdir -p {% raw %}${{ .REPORTS_DIR }}{% endraw %}
+
+  lint:
+    desc: Run GolangCI-Lint
+    cmds:
+      - golangci-lint run
+
+  lint-fix:
+    desc: Run GolangCI-Lint with auto-fix
+    cmds:
+      - golangci-lint run --fix
+
+  test:
+    desc: Run unit tests
+    deps:
+      - ensure_reports_dir
+    cmds:
+      - |
+        gotestsum \
+          --format testname \
+          --jsonfile {% raw %}${{ .REPORTS_DIR }}{% endraw %}/test-result.json \
+          --  -coverprofile={% raw %}${{ .REPORTS_DIR }}{% endraw %}/coverage.out -covermode=atomic ./...
+
+  gomod:
+    desc: Download Go modules
+    cmds:
+      - go mod download && go mod tidy
+
+  gomarkdoc:
+    desc: Generate documentation using gomarkdoc
+    cmds:
+      - gomarkdoc --output '{{`{{.Dir}}`}}/README.md' ./...
+
+  docs-build:
+    desc: Build documentation site
+    cmds:
+      - mkdocs build
+
+  docs-serve:
+    desc: Serve documentation locally
+    cmds:
+      - mkdocs serve --dev-addr=127.0.0.1:{% raw %}${{ .DOCS_PORT:-8000 }}{% endraw %}
+
+  {% if project_type != 'library' -%}
+  snapshot:
+    desc: Create a snapshot build
+    cmds:
+      - goreleaser release --snapshot --skip-publish --rm-dist
+  {%- endif %}
+
+  {% if project_type == 'api' -%}
+  dev:
+    desc: Run development server
+    cmds:
+      - docker compose up
+
+  stop:
+    desc: Stop development server
+    cmds:
+      - docker compose down
+
+  logs:
+    desc: View development server logs
+    cmds:
+      - docker compose logs -f
+  {%- endif %}

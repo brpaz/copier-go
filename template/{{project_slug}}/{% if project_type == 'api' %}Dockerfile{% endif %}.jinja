@@ -1,0 +1,112 @@
+# syntax=docker/dockerfile:1
+
+# =============================
+# --- Global Build Arguments ---
+# =============================
+ARG GO_VERSION=1.25.4
+ARG ALPINE_VERSION=3.23
+
+# ==============================
+# --- Dependencies Stage ---
+# ==============================
+FROM golang:${GO_VERSION}-alpine${ALPINE_VERSION} AS dependencies
+
+WORKDIR /app
+
+COPY go.mod go.sum ./
+
+RUN --mount=type=cache,target=/go/pkg/mod \
+  --mount=type=cache,target=/root/.cache/go-build \
+  go mod download && \
+  go mod verify
+
+# ==============================
+# --- Builder Stage ---
+# ==============================
+FROM golang:${GO_VERSION}-alpine${ALPINE_VERSION} AS builder
+
+ARG TARGETPLATFORM
+ARG BUILD_DATE
+ARG VCS_REF
+ARG VERSION=latest
+
+WORKDIR /app
+
+# Copy source code
+COPY . .
+
+# Build the application
+# CGO_ENABLED=0 for static linking
+# -ldflags options:
+#   -w: omit DWARF symbol table
+#   -s: omit symbol table and debug information
+#   -X: set version variables for reproducibility
+# -trimpath: remove all file system paths from the binary
+# -a: force rebuilding of packages for reproducibility
+RUN --mount=type=cache,target=/go/pkg/mod \
+  --mount=type=cache,target=/root/.cache/go-build \
+  CGO_ENABLED=0 \
+  go build \
+  -a \
+  -trimpath \
+  -ldflags="-w -s -X main.Version=${VERSION} -X main.BuildDate=${BUILD_DATE} -X main.Commit=${VCS_REF}" \
+  -o /build/app ./cmd/main.go
+
+# ==============================
+# --- Development Stage ---
+# ==============================
+FROM golang:${GO_VERSION}-alpine${ALPINE_VERSION} AS development
+
+ARG AIR_VERSION=1.63.4
+ARG DELVE_VERSION=1.25.2
+
+RUN apk --no-cache add git curl bash
+
+RUN go install github.com/air-verse/air@v${AIR_VERSION} \
+  go install github.com/go-delve/delve/cmd/dlv@${DELVE_VERSION}
+
+WORKDIR /app
+
+COPY . .
+
+# Expose debug port
+EXPOSE 2345
+
+# Expose app port
+EXPOSE 8080
+
+# Run air for hot-reload with delve debugger
+CMD ["air", "-c", ".air.toml"]
+
+# ==============================
+# --- Production Stage ---
+# ==============================
+FROM alpine:${ALPINE_VERSION} AS production
+
+ARG BUILD_DATE
+ARG VCS_REF
+ARG VERSION=latest
+
+# Import certificates and timezone data from builder
+RUN apk --no-cache add ca-certificates curl
+
+# Copy the binary
+COPY --from=builder /build/app /app
+
+# Copy any additional required files (like config files, static assets)
+# COPY --from=builder /app/config /config
+# COPY --from=builder /app/static /static
+
+ENV PORT=8080
+
+HEALTHCHECK --interval=30s --timeout=3s CMD sh -c 'curl -f http://localhost:$${PORT:-8080}/health || exit 1'
+
+LABEL org.opencontainers.image.title="{{ project_project_name }}" \
+  org.opencontainers.image.version="${VERSION}" \
+  org.opencontainers.image.created="${BUILD_DATE}" \
+  org.opencontainers.image.revision="${VCS_REF}" \
+  org.opencontainers.image.vendor="" \
+  org.opencontainers.image.description="{{ project_description }}"
+
+# Run the binary
+ENTRYPOINT ["/app"]

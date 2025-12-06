@@ -1,0 +1,35 @@
+name: Build Documentation
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - "docs/**"
+  pull_request:
+    paths:
+      - "docs/**"
+  workflow_dispatch:
+env:
+  MKDOCS_VERSION: "1.6.1"
+  MKDOCS_MATERIAL_VERSION: "9.7.0"
+jobs:
+  build:
+    name: Build and Deploy Documentation
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.x"
+
+      - name: Install dependencies
+        run: pip3 install mkdocs==${{ env.MKDOCS_VERSION }} mkdocs-material==${{ env.MKDOCS_MATERIAL_VERSION }}
+
+      - name: Build docs
+        run: mkdocs build
+
+      - name: Deploy to GitHub Pages
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        run: mkdocs gh-deploy --force

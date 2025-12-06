@@ -13,14 +13,23 @@ project_slug:
   default: "{{ project_name | lower | replace(' ', '-') }}"
   when: false
 
+project_description:
+  type: str
+  help: A short description of your project.
+
+project_type:
+  type: str
+  help: The type of Go project.
+  choices:
+    - library
+    - cli
+    - api
+  default: library
+
 gomod_name:
   type: str
   help: The Go module name for your project.
   default: "github.com/{{ project_slug }}"
-
-project_description:
-  type: str
-  help: A short description of your project.
 
 github_repository:
   type: str
@@ -37,5 +46,8 @@ project_homepage:
 
 # Global tasks
 _tasks:
-  - "git init"
-  - "go mod tidy"
+  - command: git init
+    working_directory: "{{ project_slug }}"
+
+  - command: go mod tidy
+    working_directory: "{{ project_slug }}"

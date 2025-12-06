@@ -1,3 +1,3 @@
 # Documentation
 
-Documentation goes here.
+> Project documentation goes here.
