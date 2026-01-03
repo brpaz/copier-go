@@ -54,7 +54,5 @@ github_url:
 # Global tasks
 _tasks:
   - command: git init
-    working_directory: "{{ project_slug }}"
 
   - command: direnv allow .
-    working_directory: "{{ project_slug }}"
