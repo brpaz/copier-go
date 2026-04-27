@@ -32,11 +32,6 @@ github_user:
   help: Your GitHub username.
   default: "brpaz"
 
-go_module:
-  type: str
-  help: The Go module name for your project.
-  default: "github.com/{{ github_user }}/{{ project_slug }}"
-
 github_repository:
   type: str
   help: GitHub repository identifier (username/repo-name).
@@ -46,6 +41,11 @@ github_repository:
     github_repository must be in the format 'username/repo-name'.
     {% endif %}
 
+go_module:
+  type: str
+  help: The Go module name for your project.
+  default: "github.com/{{ github_repository }}"
+
 github_url:
   type: str
   help: The homepage URL for your project.
@@ -54,5 +54,4 @@ github_url:
 # Global tasks
 _tasks:
   - command: git init
-
   - command: direnv allow .
