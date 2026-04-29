@@ -1,0 +1,57 @@
+package app
+
+import (
+	"context"
+	"log/slog"
+
+	"{{ go_module }}/internal/core/config"
+	corehttp "{{ go_module }}/internal/core/http"
+)
+
+// App is the composition root for the {{ project_name }} API.
+type App struct {
+	Info   VersionInfo
+	cfg    *config.Config
+	logger *slog.Logger
+}
+
+// Option is a functional option for configuring an App.
+type Option func(*App)
+
+// WithVersionInfo sets the build-time version metadata.
+func WithVersionInfo(info VersionInfo) Option {
+	return func(a *App) { a.Info = info }
+}
+
+// WithConfig sets the application configuration.
+func WithConfig(cfg *config.Config) Option {
+	return func(a *App) { a.cfg = cfg }
+}
+
+// WithLogger sets the structured logger.
+func WithLogger(logger *slog.Logger) Option {
+	return func(a *App) { a.logger = logger }
+}
+
+// New constructs an App with the provided options.
+func New(opts ...Option) (*App, error) {
+	a := &App{
+		Info:   VersionInfo{Version: "0.0.0-dev", Commit: "n/a", BuildDate: "n/a"},
+		cfg:    &config.Config{Port: "8080", Env: "development"},
+		logger: slog.Default(),
+	}
+	for _, opt := range opts {
+		opt(a)
+	}
+	return a, nil
+}
+
+// Run wires dependencies, starts the HTTP server and blocks until ctx is cancelled.
+func (a *App) Run(ctx context.Context) error {
+	a.logger.Info("starting {{ project_name }}", "version", a.Info.String(), "port", a.cfg.Port)
+
+	c := wire(a.Info, a.cfg, a.logger)
+	srv := corehttp.New(c.handler, corehttp.WithPort(a.cfg.Port))
+
+	return srv.Start(ctx)
+}

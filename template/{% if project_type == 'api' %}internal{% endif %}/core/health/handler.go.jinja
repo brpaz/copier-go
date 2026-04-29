@@ -1,0 +1,33 @@
+package health
+
+import (
+	"encoding/json"
+	"net/http"
+)
+
+// VersionInfo carries build-time metadata surfaced in the health response.
+type VersionInfo struct {
+	Version   string
+	BuildDate string
+	Commit    string
+}
+
+type healthResponse struct {
+	Status    string `json:"status"`
+	Version   string `json:"version"`
+	BuildDate string `json:"buildDate"`
+	Commit    string `json:"commit"`
+}
+
+// Handler returns an HTTP handler for the /health endpoint.
+func Handler(info VersionInfo) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		_ = json.NewEncoder(w).Encode(healthResponse{
+			Status:    "ok",
+			Version:   info.Version,
+			BuildDate: info.BuildDate,
+			Commit:    info.Commit,
+		})
+	}
+}

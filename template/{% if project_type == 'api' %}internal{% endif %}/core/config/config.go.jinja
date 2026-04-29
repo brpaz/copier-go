@@ -1,0 +1,17 @@
+package config
+
+import "{{ go_module }}/internal/utils/env"
+
+// Config holds application configuration loaded from environment variables.
+type Config struct {
+	Port string
+	Env  string
+}
+
+// Load reads configuration from environment variables.
+func Load() (*Config, error) {
+	return &Config{
+		Port: env.String("PORT", "8080"),
+		Env:  env.String("APP_ENV", "development"),
+	}, nil
+}

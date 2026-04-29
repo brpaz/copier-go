@@ -1,0 +1,50 @@
+package main
+
+import (
+	"context"
+	"fmt"
+	"log"
+	"os"
+	"os/signal"
+	"syscall"
+
+	"{{ go_module }}/internal/app"
+	"{{ go_module }}/internal/core/config"
+	corelog "{{ go_module }}/internal/core/log"
+)
+
+var (
+	Version   = "0.0.0-dev"
+	BuildDate = "n/a"
+	Commit    = "n/a"
+)
+
+func main() {
+	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
+	defer stop()
+
+	cfg, err := config.Load()
+	if err != nil {
+		log.Fatalf("failed to load config: %v", err)
+	}
+
+	logger := corelog.New(corelog.DefaultsForEnv(cfg.Env)...)
+
+	appInstance, err := app.New(
+		app.WithVersionInfo(app.VersionInfo{
+			Version:   Version,
+			Commit:    Commit,
+			BuildDate: BuildDate,
+		}),
+		app.WithConfig(cfg),
+		app.WithLogger(logger),
+	)
+	if err != nil {
+		log.Fatalf("failed to initialize app: %v", err)
+	}
+
+	if err := appInstance.Run(ctx); err != nil {
+		fmt.Fprintf(os.Stderr, "Error: %v\n", err)
+		os.Exit(1)
+	}
+}

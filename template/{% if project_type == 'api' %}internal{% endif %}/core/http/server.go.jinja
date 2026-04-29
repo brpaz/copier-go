@@ -1,0 +1,107 @@
+package http
+
+import (
+	"context"
+	"errors"
+	"fmt"
+	"net/http"
+	"time"
+)
+
+const (
+	defaultPort            = "8080"
+	defaultReadTimeout     = 15 * time.Second
+	defaultWriteTimeout    = 15 * time.Second
+	defaultIdleTimeout     = 60 * time.Second
+	defaultShutdownTimeout = 30 * time.Second
+)
+
+// options holds Server configuration.
+type options struct {
+	port            string
+	readTimeout     time.Duration
+	writeTimeout    time.Duration
+	idleTimeout     time.Duration
+	shutdownTimeout time.Duration
+}
+
+// Option is a functional option for configuring a Server.
+type Option func(*options)
+
+// WithPort sets the port the server listens on.
+func WithPort(port string) Option {
+	return func(o *options) { o.port = port }
+}
+
+// WithReadTimeout sets the maximum duration for reading the request.
+func WithReadTimeout(d time.Duration) Option {
+	return func(o *options) { o.readTimeout = d }
+}
+
+// WithWriteTimeout sets the maximum duration before timing out writes of the response.
+func WithWriteTimeout(d time.Duration) Option {
+	return func(o *options) { o.writeTimeout = d }
+}
+
+// WithIdleTimeout sets the maximum amount of time to wait for the next request.
+func WithIdleTimeout(d time.Duration) Option {
+	return func(o *options) { o.idleTimeout = d }
+}
+
+// WithShutdownTimeout sets the maximum duration allowed for graceful shutdown.
+func WithShutdownTimeout(d time.Duration) Option {
+	return func(o *options) { o.shutdownTimeout = d }
+}
+
+// Server wraps *http.Server with graceful shutdown support.
+type Server struct {
+	inner           *http.Server
+	shutdownTimeout time.Duration
+}
+
+// New creates a Server with the given handler and options.
+func New(handler http.Handler, opts ...Option) *Server {
+	o := &options{
+		port:            defaultPort,
+		readTimeout:     defaultReadTimeout,
+		writeTimeout:    defaultWriteTimeout,
+		idleTimeout:     defaultIdleTimeout,
+		shutdownTimeout: defaultShutdownTimeout,
+	}
+	for _, opt := range opts {
+		opt(o)
+	}
+
+	return &Server{
+		shutdownTimeout: o.shutdownTimeout,
+		inner: &http.Server{
+			Addr:         ":" + o.port,
+			Handler:      handler,
+			ReadTimeout:  o.readTimeout,
+			WriteTimeout: o.writeTimeout,
+			IdleTimeout:  o.idleTimeout,
+		},
+	}
+}
+
+// Start begins listening and blocks until ctx is cancelled or a fatal error occurs.
+// On ctx cancellation a graceful shutdown is attempted.
+func (s *Server) Start(ctx context.Context) error {
+	errc := make(chan error, 1)
+
+	go func() {
+		fmt.Printf("server listening on %s\n", s.inner.Addr)
+		if err := s.inner.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
+			errc <- err
+		}
+	}()
+
+	select {
+	case err := <-errc:
+		return fmt.Errorf("server error: %w", err)
+	case <-ctx.Done():
+		shutCtx, cancel := context.WithTimeout(context.Background(), s.shutdownTimeout)
+		defer cancel()
+		return s.inner.Shutdown(shutCtx)
+	}
+}

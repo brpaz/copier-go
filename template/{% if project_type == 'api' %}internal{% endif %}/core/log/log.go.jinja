@@ -1,0 +1,78 @@
+package log
+
+import (
+	"log/slog"
+	"os"
+	"strings"
+)
+
+// Format controls the log output format.
+type Format string
+
+const (
+	FormatText Format = "text"
+	FormatJSON Format = "json"
+)
+
+// options holds logger configuration.
+type options struct {
+	level  slog.Level
+	format Format
+}
+
+// Option is a functional option for configuring the logger.
+type Option func(*options)
+
+// WithLevel sets the minimum log level (debug, info, warn, error).
+func WithLevel(level string) Option {
+	return func(o *options) { o.level = parseLevel(level) }
+}
+
+// WithFormat sets the output format (text or json).
+func WithFormat(format Format) Option {
+	return func(o *options) { o.format = format }
+}
+
+// New returns a *slog.Logger built from the provided options.
+func New(opts ...Option) *slog.Logger {
+	o := &options{
+		level:  slog.LevelInfo,
+		format: FormatText,
+	}
+	for _, opt := range opts {
+		opt(o)
+	}
+
+	handlerOpts := &slog.HandlerOptions{Level: o.level}
+
+	var handler slog.Handler
+	if o.format == FormatJSON {
+		handler = slog.NewJSONHandler(os.Stdout, handlerOpts)
+	} else {
+		handler = slog.NewTextHandler(os.Stdout, handlerOpts)
+	}
+
+	return slog.New(handler)
+}
+
+// DefaultsForEnv returns options suitable for the given environment.
+// production → info level + JSON format; anything else → debug + text.
+func DefaultsForEnv(env string) []Option {
+	if strings.EqualFold(env, "production") {
+		return []Option{WithLevel("info"), WithFormat(FormatJSON)}
+	}
+	return []Option{WithLevel("debug"), WithFormat(FormatText)}
+}
+
+func parseLevel(level string) slog.Level {
+	switch strings.ToLower(level) {
+	case "debug":
+		return slog.LevelDebug
+	case "warn", "warning":
+		return slog.LevelWarn
+	case "error":
+		return slog.LevelError
+	default:
+		return slog.LevelInfo
+	}
+}

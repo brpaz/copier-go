@@ -1,0 +1,38 @@
+package app
+
+import (
+	"log/slog"
+	"net/http"
+
+	"{{ go_module }}/internal/core/config"
+	healthcore "{{ go_module }}/internal/core/health"
+	hellmod "{{ go_module }}/internal/module/hello"
+)
+
+// deps holds all wired application dependencies.
+type deps struct {
+	logger  *slog.Logger
+	handler http.Handler
+}
+
+// wire assembles all application dependencies and returns a deps container.
+func wire(info VersionInfo, cfg *config.Config, logger *slog.Logger) *deps {
+	mux := http.NewServeMux()
+
+	// Core routes
+	mux.HandleFunc("GET /health", healthcore.Handler(healthcore.VersionInfo{
+		Version:   info.Version,
+		BuildDate: info.BuildDate,
+		Commit:    info.Commit,
+	}))
+
+	// Hello module
+	helloSvc := hellmod.NewService()
+	helloHandler := hellmod.NewHandler(helloSvc)
+	helloHandler.RegisterRoutes(mux)
+
+	return &deps{
+		logger:  logger,
+		handler: mux,
+	}
+}
