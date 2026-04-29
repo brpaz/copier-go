@@ -75,7 +75,7 @@ jobs:
           name: test-results
           path: reports/
 
-      - uses: codecov/codecov-action@v5
+      - uses: codecov/codecov-action@v6
         if: {% raw %}${{ !cancelled() }}{% endraw %}
         with:
           fail_ci_if_error: false
