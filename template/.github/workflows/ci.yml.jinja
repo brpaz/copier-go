@@ -131,7 +131,7 @@ jobs:
 
       - name: Docker Metadata
         id: meta
-        uses: docker/metadata-action@v5
+        uses: docker/metadata-action@v6
         with:
           images: {% raw %}${{ env.IMAGE_REGISTRY }}/${{ env.IMAGE_NAME }}{% endraw %}
           tags: |
