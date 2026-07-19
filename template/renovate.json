@@ -1,6 +1,6 @@
 {
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
-  "extends": ["config:recommended"],
+  "extends": ["config:recommended", "helpers:pinGitHubActionDigests", "docker:pinDigests"],
   "prHourlyLimit": 5,
   "prConcurrentLimit": 20,
   "labels": ["dependencies"],
@@ -10,12 +10,6 @@
     "automerge": true
   },
   "postUpdateOptions": ["gomodTidy"],
-  "github-actions": {
-    "pinDigests": true
-  },
-  "docker": {
-    "pinDigests": true
-  },
   "packageRules": [
     {
       "description": "Group and automerge non-major updates",
