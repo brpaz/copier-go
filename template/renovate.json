@@ -9,6 +9,13 @@
     "enabled": true,
     "automerge": true
   },
+  "postUpdateOptions": ["gomodTidy"],
+  "github-actions": {
+    "pinDigests": true
+  },
+  "docker": {
+    "pinDigests": true
+  },
   "packageRules": [
     {
       "description": "Group and automerge non-major updates",
