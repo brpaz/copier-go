@@ -43,7 +43,7 @@ jobs:
             -d go_module="github.com/testuser/test-repo" \
             -d github_repository="testuser/test-repo" \
             . "$tmpdir"
-          echo "output_dir=$tmpdir/test-project" >> $GITHUB_OUTPUT
+          echo "output_dir=$tmpdir" >> $GITHUB_OUTPUT
 
       - name: Check generated files
         run: |
