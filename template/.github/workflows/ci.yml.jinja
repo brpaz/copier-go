@@ -25,15 +25,15 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
 
-      - uses: actions/setup-go@v5
+      - uses: actions/setup-go@v7
         with:
           go-version-file: "go.mod"
           cache: false
 
       - name: Lint
-        uses: golangci/golangci-lint-action@v8
+        uses: golangci/golangci-lint-action@v9
         with:
           version: {% raw %}${{ env.GOLANGCI_VERSION }}{% endraw %}
 
@@ -46,9 +46,9 @@ jobs:
       checks: write
     steps:
       - name: Checkout
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
 
-      - uses: actions/setup-go@v6
+      - uses: actions/setup-go@v7
         with:
           go-version-file: "go.mod"
 
@@ -70,12 +70,12 @@ jobs:
 
       - name: Upload test results artifact
         if: {% raw %}${{ !cancelled() }}{% endraw %}
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: test-results
           path: reports/
 
-      - uses: codecov/codecov-action@v5
+      - uses: codecov/codecov-action@v7
         if: {% raw %}${{ !cancelled() }}{% endraw %}
         with:
           fail_ci_if_error: false
@@ -95,16 +95,16 @@ jobs:
       IMAGE_NAME: {% raw %}${{ github.repository }}{% endraw %}
     steps:
       - name: Checkout
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
 
       - name: Set up QEMU (for multi-arch build)
-        uses: docker/setup-qemu-action@v3
+        uses: docker/setup-qemu-action@v4
 
       - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
+        uses: docker/setup-buildx-action@v4
 
       - name: Log in to GitHub Container Registry
-        uses: docker/login-action@v3
+        uses: docker/login-action@v4
         with:
           registry: {% raw %}${{ env.IMAGE_REGISTRY }}{% endraw %}
           username: {% raw %}${{ github.actor }}{% endraw %}
@@ -131,7 +131,7 @@ jobs:
 
       - name: Docker Metadata
         id: meta
-        uses: docker/metadata-action@v5
+        uses: docker/metadata-action@v6
         with:
           images: {% raw %}${{ env.IMAGE_REGISTRY }}/${{ env.IMAGE_NAME }}{% endraw %}
           tags: |
@@ -143,7 +143,7 @@ jobs:
             {% endraw %}
 
       - name: Build image
-        uses: docker/build-push-action@v6
+        uses: docker/build-push-action@v7
         with:
           cache-from: type=gha
           cache-to: type=gha,mode=max
@@ -165,7 +165,7 @@ jobs:
       {%- endif %}
 
       - name: Final Build and Push to Registry
-        uses: docker/build-push-action@v6
+        uses: docker/build-push-action@v7
         with:
           cache-from: type=gha
           cache-to: type=gha,mode=max
@@ -189,16 +189,16 @@ jobs:
       contents: write
     steps:
       - name: Checkout
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
         with:
           fetch-depth: 0
 
-      - uses: actions/setup-go@v5
+      - uses: actions/setup-go@v7
         with:
           go-version-file: "go.mod"
 
     - name: Run GoReleaser (snapshot)
-      uses: goreleaser/goreleaser-action@v6
+      uses: goreleaser/goreleaser-action@v7
       if: github.event_name != 'release'
       with:
         args: release --clean --snapshot
@@ -206,7 +206,7 @@ jobs:
         GITHUB_TOKEN: {% raw %}${{ secrets.GITHUB_TOKEN }}{% endraw %}
 
     - name: Run GoReleaser (release)
-      uses: goreleaser/goreleaser-action@v6
+      uses: goreleaser/goreleaser-action@v7
       if: github.event_name == 'release'
       with:
         args: release --clean
@@ -215,7 +215,7 @@ jobs:
 
     - name: Upload Artifacts
       if: github.ref == 'refs/heads/main'
-      uses: actions/upload-artifact@v5
+      uses: actions/upload-artifact@v7
       with:
         name: build-artifacts
         path: dist/*
