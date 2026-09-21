@@ -59,7 +59,7 @@ tasks:
   gomarkdoc:
     desc: Generate documentation using gomarkdoc
     cmds:
-      - gomarkdoc --output {% raw %}'{{`{{.Dir}}`}}/GOMARKDOC.md'{% endraw %} ./...
+      - gomarkdoc --output {% raw %}'{{`{{.Dir}}`}}/GOMARKDOC.md'{% endraw %} $(go list ./...)
 
   docs-build:
     desc: Build documentation site
