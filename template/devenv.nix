@@ -29,8 +29,8 @@
   ];
 
   enterShell = ''
-    if [ -f .env ]; then
-      cp env.example .env
+    if [ ! -f .env ]; then
+      cp .env.example .env
     fi
     lefthook install
     go mod tidy
