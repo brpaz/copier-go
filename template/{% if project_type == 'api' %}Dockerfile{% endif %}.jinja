@@ -67,10 +67,12 @@ WORKDIR /app
 RUN apk --no-cache add git curl bash
 
 RUN go install github.com/air-verse/air@v${AIR_VERSION} && \
-  go install github.com/go-delve/delve/cmd/dlv@${DELVE_VERSION}
+  go install github.com/go-delve/delve/cmd/dlv@v${DELVE_VERSION}
 
+# The tool installs above leave the module cache owned by root; air builds as appuser.
 RUN addgroup -g ${GID} -S appgroup && \
-  adduser -u ${UID} -S appuser -G appgroup
+  adduser -u ${UID} -S appuser -G appgroup && \
+  chown -R appuser:appgroup /go
 
 COPY . .
 
