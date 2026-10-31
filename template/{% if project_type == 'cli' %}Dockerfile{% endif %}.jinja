@@ -49,8 +49,8 @@ RUN --mount=type=cache,target=/go/pkg/mod \
   go build \
   -a \
   -trimpath \
-  -ldflags="-w -s -X {{go_module}}/cmd/main.Version=${VERSION} -X {{go_module}}/cmd/main.BuildDate=${BUILD_DATE} -X {{go_module}}/cmd/main.Commit=${VCS_REF}" \
-  -o /build/app ./cmd/main.go
+  -ldflags="-w -s -X main.Version=${VERSION} -X main.BuildDate=${BUILD_DATE} -X main.Commit=${VCS_REF}" \
+  -o /build/app ./cmd/{{ project_slug }}
 
 # ==============================
 # --- Development Stage ---
@@ -70,7 +70,7 @@ COPY . .
 
 USER appuser
 
-CMD ["go", "run", "./cmd/main.go"]
+CMD ["go", "run", "./cmd/{{ project_slug }}"]
 
 # ==============================
 # --- Production Stage ---

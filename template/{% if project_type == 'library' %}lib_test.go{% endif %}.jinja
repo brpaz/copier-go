@@ -1,0 +1,11 @@
+package {{ project_slug | replace('-', '') }}
+
+import (
+	"testing"
+
+	"github.com/stretchr/testify/assert"
+)
+
+func TestExample(t *testing.T) {
+	assert.Equal(t, "This is an example function in the library.", Example())
+}

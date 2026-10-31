@@ -23,7 +23,7 @@ builds:
       - -X main.Version={% raw %}{{ .Version }}{% endraw %}
       - -X main.BuildDate={% raw %}{{ .Date }}{% endraw %}
       - -X main.Commit={% raw %}{{ .Commit }}{% endraw %}
-    main: cmd/main.go
+    main: ./cmd/{{ project_slug }}
 
 archives:
   - formats: [tar.gz]
