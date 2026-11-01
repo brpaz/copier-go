@@ -1,9 +1,15 @@
 {
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
   "extends": ["config:best-practices"],
-  "gomod": {
-    "managerFilePatterns": ["/(^|/)go\\.mod$/", "/(^|/)go\\.mod\\.jinja$/"]
-  },
+  "customManagers": [
+    {
+      "customType": "regex",
+      "description": "Go modules in the templated go.mod: the gomod manager runs go commands that cannot parse Jinja",
+      "managerFilePatterns": ["/(^|/)go\\.mod\\.jinja$/"],
+      "matchStrings": ["(?:require\\s+)?(?<depName>[a-z0-9.-]+\\.[a-z]+/\\S+)\\s+(?<currentValue>v\\d\\S*)"],
+      "datasourceTemplate": "go"
+    }
+  ],
   "github-actions": {
     "managerFilePatterns": [
       "/(^|/)\\.github/workflows/[^/]+\\.ya?ml$/",
